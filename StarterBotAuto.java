@@ -76,7 +76,7 @@ public class StarterBotAuto extends OpMode
      * in the launch() function to only run the windmill servo when the motor is spinning fast
      * enough to make a successful throw.
      */
-    public final int LAUNCHER_TARGET_VELOCITY = 1250;
+    public final int LAUNCHER_TARGET_VELOCITY = 1250; // these can be changed for further or shorter shots
     public final int LAUNCHER_MIN_VELOCITY = 1200;
 
     /*
@@ -129,6 +129,7 @@ public class StarterBotAuto extends OpMode
     private enum AutonomousState {
         LAUNCH,
         DRIVE,
+        TURN,
         COMPLETE
     }
 
@@ -174,7 +175,7 @@ public class StarterBotAuto extends OpMode
          * Note: The settings here assume direct drive on left and right wheels. Gear
          * Reduction or 90 Deg drives may require direction flips
          */
-        leftDrive.setDirection(DcMotor.Direction.FORWARD);
+        leftDrive.setDirection(DcMotor.Direction.FORWARD);// swap forward and reverse if they go the wrong direction
         rightDrive.setDirection(DcMotor.Direction.REVERSE);
 
         /*
@@ -241,6 +242,7 @@ public class StarterBotAuto extends OpMode
      */
     @Override
     public void loop() {
+        intakePower = 0;// this is to reset the power at the beginning each time. M ight not be needed
         /*
          * TECH TIP: Switch Statements
          * switch statements are an excellent way to take advantage of an enum. They work very
@@ -253,18 +255,28 @@ public class StarterBotAuto extends OpMode
         switch (autonomousState) {
             case LAUNCH:
                 launch(true);
-                if(autoTimer.seconds() > 10){
+                if(autoTimer.seconds() > 10){// how many seconds for robot to shoot. give enough time for all 4
                     launch(false);
                     intakePower = 0;
                     autonomousState = AutonomousState.DRIVE;
                 }
                 break;
             case DRIVE:
-                if(drive(DRIVE_SPEED, -120, DistanceUnit.MM, 2)){
+                if(drive(DRIVE_SPEED, -120, DistanceUnit.MM, 2)){ //change distance and time so it has a shorter stop
+                    leftDrive.setPower(0);
+                    rightDrive.setPower(0);
+                    autonomousState = AutonomousState.TURN;
+                }
+                break;
+            case TURN:
+                if(rotate(ROTATE_SPEED, -90, AngleUnit.DEGREES, 1)) {
+                    
                     autonomousState = AutonomousState.COMPLETE;
                 }
                 break;
             case COMPLETE:
+                leftDrive.setPower(0);
+                rightDrive.setPower(0);
                 telemetry.addLine("Auto Complete!");
                 break;
         }
